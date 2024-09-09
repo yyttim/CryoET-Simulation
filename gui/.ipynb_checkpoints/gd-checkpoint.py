@@ -6,7 +6,7 @@ from core.widgets_utilities import *
 from core.all_features2 import all_features2
 from core.tk_utilities import *
 
-DEF_PATH = os.path.realpath(os.getcwd() + '/../data') + '/../data_generated/polnet_test'
+DEF_PATH = os.path.realpath(os.getcwd() + '/../data') + '/../../data_generated/polnet_test'
 
 widget_out_dir = "/root/autodl-tmp/polnet/gui"
 
@@ -15,8 +15,12 @@ widget_out_dir = "/root/autodl-tmp/polnet/gui"
 MEMBRANES_LIST = []
 HELIX_LIST= []
 PROTEINS_LIST = ["/root/autodl-tmp/polnet/data/in_10A/1bxn_10A.pns"]
-MB_PROTEINS_LIST = ["/root/autodl-tmp/polnet/data/in_10A/mb_4pe5_10A.pms"]
+PROTEINS_LIST_METHOD = [1, 0]
+PROTEINS_LIST = []
+# MB_PROTEINS_LIST = ["/root/autodl-tmp/polnet/data/in_10A/mb_4pe5_10A.pms"]
+MB_PROTEINS_LIST = []
 ORGANELLE_LIST = ["/root/autodl-tmp/polnet/data/xbq/2c4c.pns"]
+# ORGANELLE_LIST = []
 
 ntomos_widget = 1
 voi_shape1 = 400
@@ -58,11 +62,11 @@ def generate_voi_off():
 
 if __name__ == "__main__":
 	path = check_dir(widget_out_dir, DEF_PATH)
-	if MEMBRANES_LIST or HELIX_LIST or PROTEINS_LIST or MB_PROTEINS_LIST:
+	if MEMBRANES_LIST or HELIX_LIST or PROTEINS_LIST or MB_PROTEINS_LIST or ORGANELLE_LIST:
 		all_features2(ntomos_widget, generate_voi_shape(),
 					  path, generate_voi_off(), voi_size_widget,
 					  mmer_tries_widget, pmer_tries_widget,
 					  MEMBRANES_LIST, HELIX_LIST, PROTEINS_LIST, MB_PROTEINS_LIST, ORGANELLE_LIST,
-					  surf_dec_widget,
+					  PROTEINS_LIST_METHOD, surf_dec_widget,
 					  generate_tilts_angs(), [detector_snr_widget_low, detector_snr_widget_high],
 					  malign_mn_widget, malign_mx_widget, malign_sg_widget)

@@ -6,7 +6,7 @@ from core.widgets_utilities import *
 from core.all_features2 import all_features2
 from core.tk_utilities import *
 
-DEF_PATH = os.path.realpath(os.getcwd() + '/../data') + '/../data_generated/polnet_test'
+DEF_PATH = os.path.realpath(os.getcwd() + '/../data') + '/../../data_generated/polnet_test'
 
 widget_out_dir = "/root/autodl-tmp/polnet/gui"
 
