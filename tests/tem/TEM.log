@@ -1,0 +1,153 @@
+
+[Thu Jul 18 06:56:42 2024]RUNNING COMMAND:-> /usr/local/IMOD/bin/xyzproj -inp /root/autodl-tmp/polnet/tests/tem/in_vol.mrc -o /root/autodl-tmp/polnet/tests/tem/out_micrographs.mrc -ax Y -an -60,61,3 -m 2
+
+Input volume path: /root/autodl-tmp/polnet/tests/tem/in_vol.mrc
+Output micrographs path: /root/autodl-tmp/polnet/tests/tem/out_micrographs.mrc
+Tilt angles: -60,61,3
+
+ RO image file on unit   1 : /root/autodl-tmp/polnet/tests/tem/in_vol.mrc     Size=      62501 K
+
+ Number of columns, rows, sections .....     400     400     100
+ Map mode ..............................    2   (32-bit real)              
+ Start cols, rows, sects, grid x,y,z ...    0     0     0     400    400    100
+ Pixel spacing (Angstroms)..............   1.000      1.000      1.000    
+ Cell angles ...........................   90.000   90.000   90.000
+ Fast, medium, slow axes ...............    X    Y    Z
+ Origin on x,y,z .......................    0.000       0.000       0.000    
+ Minimum density .......................   0.0000    
+ Maximum density .......................   1.0784    
+ Mean density ..........................  0.10567E-01
+ RMS deviation from mean................  0.80217E-01
+ tilt angles (original,current) ........   0.0   0.0   0.0   0.0   0.0   0.0
+ Space group,# extra bytes,idtype,lens .        1        0        0        0
+
+     1 Titles :
+Created by mrcfile.py                                       2024-07-18 06:56:41
+
+
+ NEW image file on unit   2 : /root/autodl-tmp/polnet/tests/tem/out_micrographs.mrc
+
+ OLD image file on unit   2 : /root/autodl-tmp/polnet/tests/tem/out_micrographs.mrc     Size=      25626 K
+
+ Number of columns, rows, sections .....     400     400      41
+ Map mode ..............................    2   (32-bit real)              
+ Start cols, rows, sects, grid x,y,z ...    0     0     0     400    400     41
+ Pixel spacing (Angstroms)..............   1.000      1.000      1.000    
+ Cell angles ...........................   90.000   90.000   90.000
+ Fast, medium, slow axes ...............    X    Y    Z
+ Origin on x,y,z .......................    0.000       0.000       0.000    
+ Minimum density ....................... -0.35031    
+ Maximum density .......................  0.22803E-01
+ Mean density .......................... -0.24757E-01
+ RMS deviation from mean................  0.21529E-01
+ tilt angles (original,current) ........   0.0   0.0   0.0   0.0   0.0   0.0
+ Space group,# extra bytes,idtype,lens .        1        0        0        0
+
+     1 Titles :
+Created by mrcfile.py                                       2024-07-18 06:56:47
+
+
+ RO image file on unit   3 : /root/autodl-tmp/polnet/tests/tem/out_micrographs.mrc     Size=      25626 K
+
+ Number of columns, rows, sections .....     400     400      41
+ Map mode ..............................    2   (32-bit real)              
+ Start cols, rows, sects, grid x,y,z ...    0     0     0     400    400     41
+ Pixel spacing (Angstroms)..............   10.00      10.00      10.00    
+ Cell angles ...........................   90.000   90.000   90.000
+ Fast, medium, slow axes ...............    X    Y    Z
+ Origin on x,y,z .......................    0.000       0.000       0.000    
+ Minimum density ....................... -0.35031    
+ Maximum density .......................  0.22803E-01
+ Mean density .......................... -0.24757E-01
+ RMS deviation from mean................  0.21529E-01
+ tilt angles (original,current) ........   0.0   0.0   0.0   0.0   0.0   0.0
+ Space group,# extra bytes,idtype,lens .        1        0        0        0
+
+     1 Titles :
+Created by mrcfile.py                                       2024-07-18 06:56:47
+
+
+[Thu Jul 18 06:56:47 2024]RUNNING COMMAND:-> /usr/local/IMOD/bin/alterheader /root/autodl-tmp/polnet/tests/tem/out_micrographs.mrc -del 10.0,10.0,10.0
+
+Input projection file:: /root/autodl-tmp/polnet/tests/tem/out_micrographs.mrc
+ Dimensions:    400    400     41   Pixel size:        10         10         10
+Mode:  2               Min, max, mean:     -0.35031     0.022803    -0.024757
+Created by mrcfile.py                                       2024-07-18 06:56:47
+
+ Output map is sectioned perpendicular to the tilt axis
+
+ Thickness of reconstructed slice is 100 pixels.
+ Tilt angles were entered from a tilt file
+
+ Projection angles:
+   -60.00   -57.00   -54.00   -51.00   -48.00   -45.00   -42.00   -39.00
+   -36.00   -33.00   -30.00   -27.00   -24.00   -21.00   -18.00   -15.00
+   -12.00    -9.00    -6.00    -3.00     0.00     3.00     6.00     9.00
+    12.00    15.00    18.00    21.00    24.00    27.00    30.00    33.00
+    36.00    39.00    42.00    45.00    48.00    51.00    54.00    57.00
+    60.00
+
+
+Allocated 59 MB for main arrays
+---------------------------
+Total floats in main arrays    15339348
+  Radial weighting function       38058
+  Output slice                    40000
+  400 Transposed projections   15223200
+  Stretching buffer               38058
+
+Final reconstruction file: /root/autodl-tmp/polnet/tests/tem/out_rec3d.mrc
+ Dimensions:    400    100    400   Pixel size:        10         10         10
+Mode:  2               Min, max, mean:      -1.8896       1.1041   -0.0058013
+Created by mrcfile.py                                       2024-07-18 06:56:47
+TILT: Tomographic reconstruction                        18-Jul-24  06:56:47
+
+ To scale output to bytes (10-245), use SCALE to add 2.017,  and scale by 78.498
+
+ To scale output to -15000 to 15000, use SCALE to add 0.393,  and scale by 10021
+
+ Reconstruction of 400 slices complete.
+
+[Thu Jul 18 06:56:47 2024]RUNNING COMMAND:-> /usr/local/IMOD/bin/tilt -inp /root/autodl-tmp/polnet/tests/tem/out_micrographs.mrc -output /root/autodl-tmp/polnet/tests/tem/out_rec3d.mrc -TILTFILE /root/autodl-tmp/polnet/tests/tem/out_tangs.tlt -THICKNESS 100
+
+ OLD image file on unit   2 : /root/autodl-tmp/polnet/tests/tem/out_rec3d.mrc     Size=      62501 K
+
+ Number of columns, rows, sections .....     400     400     100
+ Map mode ..............................    2   (32-bit real)              
+ Start cols, rows, sects, grid x,y,z ...    0     0     0     400    400    100
+ Pixel spacing (Angstroms)..............   1.000      1.000      1.000    
+ Cell angles ...........................   90.000   90.000   90.000
+ Fast, medium, slow axes ...............    X    Y    Z
+ Origin on x,y,z .......................    0.000       0.000       0.000    
+ Minimum density .......................  -1.8896    
+ Maximum density .......................   1.1041    
+ Mean density .......................... -0.58013E-02
+ RMS deviation from mean................  0.13812    
+ tilt angles (original,current) ........   0.0   0.0   0.0   0.0   0.0   0.0
+ Space group,# extra bytes,idtype,lens .        1        0        0        0
+
+     1 Titles :
+Created by mrcfile.py                                       2024-07-18 06:56:48
+
+
+ RO image file on unit   3 : /root/autodl-tmp/polnet/tests/tem/out_rec3d.mrc     Size=      62501 K
+
+ Number of columns, rows, sections .....     400     400     100
+ Map mode ..............................    2   (32-bit real)              
+ Start cols, rows, sects, grid x,y,z ...    0     0     0     400    400    100
+ Pixel spacing (Angstroms)..............   10.00      10.00      10.00    
+ Cell angles ...........................   90.000   90.000   90.000
+ Fast, medium, slow axes ...............    X    Y    Z
+ Origin on x,y,z .......................    0.000       0.000       0.000    
+ Minimum density .......................  -1.8896    
+ Maximum density .......................   1.1041    
+ Mean density .......................... -0.58013E-02
+ RMS deviation from mean................  0.13812    
+ tilt angles (original,current) ........   0.0   0.0   0.0   0.0   0.0   0.0
+ Space group,# extra bytes,idtype,lens .        1        0        0        0
+
+     1 Titles :
+Created by mrcfile.py                                       2024-07-18 06:56:48
+
+
+[Thu Jul 18 06:56:48 2024]RUNNING COMMAND:-> /usr/local/IMOD/bin/alterheader /root/autodl-tmp/polnet/tests/tem/out_rec3d.mrc -del 10.0,10.0,10.0 -org 0,0,0

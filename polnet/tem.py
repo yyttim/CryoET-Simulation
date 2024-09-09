@@ -112,6 +112,7 @@ class TEM:
         try:
             with open(self.__log_file, 'a') as file_log:
                 file_log.write('\n[' + time.strftime("%c") + ']RUNNING COMMAND:-> ' + ' '.join(xyzproj_cmd) + '\n')
+                print("xyzproj_cmd", xyzproj_cmd)
                 subprocess.call(xyzproj_cmd, stdout=file_log, stderr=file_log)
             self.__save_tangs_file(angs)
         except subprocess.CalledProcessError:
@@ -147,9 +148,10 @@ class TEM:
         # Update micrographs file
         lio.write_mrc(mics, self.__micgraphs_file)
 
-    def recon3D_imod(self):
+    def recon3D_imod(self, thick=None):
         """
         Performs a 3D reconstruction from the tilted series micrograph using 'tilt' IMOD binary
+        :param thick: (optional) to enable a tomogram thickness (along Z-axis) different from the original density.
         """
 
         # Call to IMOD binary (tilt)
@@ -160,7 +162,11 @@ class TEM:
         tilt_cmd += ['-inp', self.__micgraphs_file]
         tilt_cmd += ['-output', self.__rec3d_file]
         tilt_cmd += ['-TILTFILE', self.__tangs_file]
-        tilt_cmd += ['-THICKNESS', str(vol.shape[0])]
+        if thick is None:
+            tilt_cmd += ['-THICKNESS', str(vol.shape[0])]
+        else:
+            assert thick > 0
+            tilt_cmd += ['-THICKNESS', str(thick)]
 
         # Command calling
         try:

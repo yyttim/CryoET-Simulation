@@ -7,15 +7,15 @@ from polnet.utils import *
 from polnet import lio
 from polnet import tem
 from polnet import poly as pp
-from polnet.network import NetSAWLC, NetSAWLCInter, NetHelixFiber, NetHelixFiberB
+from polnet.network import NetSAWLC, NetSAWLCInter, NetHelixFiber, NetHelixFiberB, NetOrgan
 from polnet.polymer import FiberUnitSDimer, MTUnit, MB_DOMAIN_FIELD_STR
 from polnet.stomo import MmerFile, MbFile, SynthTomo, SetTomos, HelixFile, MTFile, ActinFile, MmerMbFile
 from polnet.lrandom import EllipGen, SphGen, TorGen, PGenHelixFiberB, PGenHelixFiber, SGenUniform, SGenProp, OccGen
 from polnet.membrane import SetMembranes
 
 def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, PMER_TRIES,
-                  MEMBRANES_LIST, HELIX_LIST, PROTEINS_LIST, MB_PROTEINS_LIST, SURF_DEC,
-                  TILT_ANGS, DETECTOR_SNR, MALIGN_MN, MALIGN_MX, MALIGN_SG):
+                  MEMBRANES_LIST, HELIX_LIST, PROTEINS_LIST, MB_PROTEINS_LIST, ORGANELLE_LIST, PROTEINS_LIST_METHOD,
+                  SURF_DEC, TILT_ANGS, DETECTOR_SNR, MALIGN_MN, MALIGN_MX, MALIGN_SG):
 
     # Common tomogram settings
     ROOT_PATH = os.path.realpath(os.getcwd() + '/../data')
@@ -52,6 +52,9 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
     with open(OUT_DIR + '/labels_table.csv', 'w') as file_csv:
         writer_csv = csv.DictWriter(file_csv, fieldnames=header_lbl_tab, delimiter='\t')
         writer_csv.writeheader()
+        for i in range(len(ORGANELLE_LIST)):
+            writer_csv.writerow({header_lbl_tab[0]: ORGANELLE_LIST[i], header_lbl_tab[1]: unit_lbl})
+            unit_lbl += 1
         for i in range(len(MEMBRANES_LIST)):
             writer_csv.writerow({header_lbl_tab[0]: MEMBRANES_LIST[i], header_lbl_tab[1]: unit_lbl})
             unit_lbl += 1
@@ -66,6 +69,7 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
             unit_lbl += 1
     
     # Loop for tomograms
+    print("NTOMOS", NTOMOS)
     for tomod_id in range(NTOMOS):
     
         print('GENERATING TOMOGRAM NUMBER:', tomod_id)
@@ -89,24 +93,94 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
         synth_tomo = SynthTomo()
         poly_vtp, mbs_vtp, skel_vtp = None, None, None
         entity_id = 1
-        mb_voxels, ac_voxels, mt_voxels, cp_voxels, mp_voxels = 0, 0, 0, 0, 0
+        mb_voxels, ac_voxels, mt_voxels, cp_voxels, mp_voxels, og_voxels = 0, 0, 0, 0, 0, 0
         set_mbs = None
-    
+
+        # Organelle loop
+        count_organelle = 0
+        model_surfs, models, model_masks, model_codes = list(), list(), list(), list()
+        ORGANELLE_VOI_VSIZE = VOI_VSIZE * 50
+        for p_id, p_file in enumerate(ORGANELLE_LIST):
+            print('\tPROCESSING FILE:', p_file)
+
+            # Loading the protein
+            organelle = MmerFile(p_file)
+            # Generating the occupancy
+            hold_occ = organelle.get_pmer_occ()
+            if hasattr(hold_occ, '__len__'):
+                hold_occ = OccGen(hold_occ).gen_occupancy()
+
+            try:
+                model = lio.load_mrc(organelle.get_mmer_svol())
+            except FileNotFoundError:
+                model = lio.load_mrc(ROOT_PATH + '/' + organelle.get_mmer_svol())
+
+            model = lin_map(model, lb=0, ub=1)
+            model = vol_cube(model)
+            model_mask = model < organelle.get_iso()
+            model[model_mask] = 0
+            model_surf = pp.iso_surface(model, organelle.get_iso(), closed=False, normals=None)
+            if SURF_DEC is not None:
+                model_surf = pp.poly_decimate(model_surf, SURF_DEC)
+
+            center = .5 * np.asarray(model.shape, dtype=float)
+            # Monomer centering
+            model_surf = pp.poly_translate(model_surf, -center)
+            # Voxel resolution scaling
+            model_surf = pp.poly_scale(model_surf, ORGANELLE_VOI_VSIZE)
+            model_surfs.append(model_surf)
+            surf_diam = pp.poly_diam(model_surf) * organelle.get_pmer_l()
+            models.append(model)
+            model_masks.append(model_mask)
+            model_codes.append(organelle.get_mmer_id())
+
+            # Network generation
+            pol_l_generator = PGenHelixFiber()
+            net_sawlc = NetOrgan(voi, ORGANELLE_VOI_VSIZE, organelle.get_pmer_l() * surf_diam, model_surf,
+                                 organelle.get_pmer_l_max(),
+                                 pol_l_generator, hold_occ, organelle.get_pmer_over_tol(), poly=None,
+                                 svol=model < organelle.get_iso(), tries_mmer=MMER_TRIES, tries_pmer=PMER_TRIES)
+            net_sawlc.build_network()
+
+            # Density tomogram updating
+            net_sawlc.insert_density_svol(model_mask, voi, ORGANELLE_VOI_VSIZE, merge='min')
+            net_sawlc.insert_density_svol(model, tomo_den, ORGANELLE_VOI_VSIZE, merge='max')
+            hold_lbls = np.zeros(shape=tomo_lbls.shape, dtype=np.float32)
+            net_sawlc.insert_density_svol(np.invert(model_mask), hold_lbls, ORGANELLE_VOI_VSIZE, merge='max')
+            tomo_lbls[hold_lbls > 0] = entity_id
+            count_organelle += net_sawlc.get_num_mmers()
+            print(">>>>>>>>count_organelle", count_organelle)
+            og_voxels += (tomo_lbls == entity_id).sum()
+            hold_vtp = net_sawlc.get_vtp()
+            hold_skel_vtp = net_sawlc.get_skel()
+            pp.add_label_to_poly(hold_vtp, entity_id, 'Entity', mode='both')
+            pp.add_label_to_poly(hold_skel_vtp, entity_id, 'Entity', mode='both')
+            pp.add_label_to_poly(hold_vtp, LBL_CP, 'Type', mode='both')
+            pp.add_label_to_poly(hold_skel_vtp, LBL_CP, 'Type', mode='both')
+            if poly_vtp is None:
+                poly_vtp = hold_vtp
+                skel_vtp = hold_skel_vtp
+            else:
+                poly_vtp = pp.merge_polys(poly_vtp, hold_vtp)
+                skel_vtp = pp.merge_polys(skel_vtp, hold_skel_vtp)
+            synth_tomo.add_network(net_sawlc, 'SAWLC', entity_id, code=organelle.get_mmer_id())
+            entity_id += 1
+
         # Membranes loop
         count_mbs, hold_den = 0, None
         for p_id, p_file in enumerate(MEMBRANES_LIST):
-    
+
             print('\tPROCESSING FILE:', p_file)
-    
+
             # Loading the membrane file
             memb = MbFile()
             memb.load_mb_file(p_file)
-    
+
             # Generating the occupancy
             hold_occ = memb.get_occ()
             if hasattr(hold_occ, '__len__'):
                 hold_occ = OccGen(hold_occ).gen_occupancy()
-    
+
             # Membrane random generation by type
             param_rg = (memb.get_min_rad(), math.sqrt(3) * max(VOI_SHAPE) * VOI_VSIZE, memb.get_max_ecc())
             if memb.get_type() == 'sphere':
@@ -119,7 +193,7 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
                     hold_den *= mb_sph_generator.gen_den_cf(memb.get_den_cf_rg()[0], memb.get_den_cf_rg()[1])
             elif memb.get_type() == 'ellipse':
                 mb_ellip_generator = EllipGen(radius_rg=param_rg[:2], max_ecc=param_rg[2])
-                set_mbs = SetMembranes(voi, VOI_VSIZE, mb_ellip_generator, param_rg,  memb.get_thick_rg(),
+                set_mbs = SetMembranes(voi, VOI_VSIZE, mb_ellip_generator, param_rg, memb.get_thick_rg(),
                                        memb.get_layer_s_rg(), hold_occ, memb.get_over_tol(), bg_voi=bg_voi)
                 set_mbs.build_set(verbosity=True)
                 hold_den = set_mbs.get_tomo()
@@ -127,7 +201,8 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
                     hold_den *= mb_ellip_generator.gen_den_cf(memb.get_den_cf_rg()[0], memb.get_den_cf_rg()[1])
             elif memb.get_type() == 'toroid':
                 mb_tor_generator = TorGen(radius_rg=(param_rg[0], param_rg[1]))
-                set_mbs = SetMembranes(voi, VOI_VSIZE, mb_tor_generator, param_rg, memb.get_thick_rg(), memb.get_layer_s_rg(),
+                set_mbs = SetMembranes(voi, VOI_VSIZE, mb_tor_generator, param_rg, memb.get_thick_rg(),
+                                       memb.get_layer_s_rg(),
                                        hold_occ, memb.get_over_tol(), bg_voi=bg_voi)
                 set_mbs.build_set(verbosity=True)
                 hold_den = set_mbs.get_tomo()
@@ -136,7 +211,7 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
             else:
                 print('ERROR: Membrane type', memb.get_type(), 'not recognized!')
                 sys.exit()
-    
+
             # Density tomogram updating
             voi = set_mbs.get_voi()
             mb_mask = set_mbs.get_tomo() > 0
@@ -156,12 +231,13 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
                 skel_vtp = pp.merge_polys(skel_vtp, hold_vtp)
             synth_tomo.add_set_mbs(set_mbs, 'Membrane', entity_id, memb.get_type())
             entity_id += 1
-    
+
         # Get membranes poly
         if set_mbs is not None:
             mbs_vtp = vtk.vtkPolyData()
             mbs_vtp.DeepCopy(poly_vtp)
-    
+
+
         # Loop for Helicoidal structures
         count_actins, count_mts = 0, 0
         for p_id, p_file in enumerate(HELIX_LIST):
@@ -309,7 +385,7 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
             # net_sawlc = NetSAWLCInter(voi, VOI_VSIZE, surf_diams, model_surfs, protein.get_pmer_l_max(),
             #                           pol_l_generator, pol_s_generator, protein.get_pmer_occ(), protein.get_pmer_over_tol(),
             #                           poly=None, svols=model_masks, codes=model_codes, compaq=5.5)
-            net_sawlc.build_network()
+            net_sawlc.build_network(PROTEINS_LIST_METHOD[p_id])
     
             # Density tomogram updating
             net_sawlc.insert_density_svol(model_mask, voi, VOI_VSIZE, merge='min')
@@ -429,10 +505,11 @@ def all_features2(NTOMOS, VOI_SHAPE, OUT_DIR, VOI_OFFS, VOI_VSIZE, MMER_TRIES, P
         print('\t\t\t+Membranes:', count_mbs, '#, ', mb_voxels * vx_um3, 'um**3, ', 100. * (mb_voxels / voi_voxels), '%')
         print('\t\t\t+Actin:', count_actins, '#, ', ac_voxels * vx_um3, 'um**3, ', 100. * (ac_voxels / voi_voxels), '%')
         print('\t\t\t+Microtublues:', count_mts, '#, ', mt_voxels * vx_um3, 'um**3, ', 100. * (mt_voxels / voi_voxels), '%')
+        print('\t\t\t+Organelle:', count_organelle, '#, ', og_voxels * vx_um3, 'um**3, ', 100. * (og_voxels / voi_voxels), '%')
         print('\t\t\t+Proteins:', count_prots, '#, ', cp_voxels * vx_um3, 'um**3, ', 100. * (cp_voxels / voi_voxels), '%')
         print('\t\t\t+Membrane proteins:', count_mb_prots, '#, ', mp_voxels * vx_um3, 'um**3, ', 100. * (mp_voxels / voi_voxels), '%')
         counts_total = count_mbs + count_actins + count_mts + count_prots + count_mb_prots
-        total_voxels = mb_voxels + ac_voxels + mt_voxels + cp_voxels + mp_voxels
+        total_voxels = mb_voxels + ac_voxels + mt_voxels + cp_voxels + mp_voxels + og_voxels
         print('\t\t\t+Total:', counts_total, '#, ', total_voxels * vx_um3, 'um**3, ', 100. * (total_voxels / voi_voxels), '%')
         print('\t\t\t+Time for generation: ', (time.time() - hold_time) / 60, 'mins')
     

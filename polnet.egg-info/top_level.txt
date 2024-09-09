@@ -1,0 +1,15 @@
+build
+cupy
+data
+data_generated
+docs
+gui
+human
+polnet
+scripts
+temp
+test_1
+test_2
+test_3
+test_4
+tests
