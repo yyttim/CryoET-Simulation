@@ -18,3 +18,7 @@ venv
 *.swp
 
 VOCdevkit/
+
+gui/tomos_organelle/
+gui/tomos_random/
+gui/tomos_gauss/
